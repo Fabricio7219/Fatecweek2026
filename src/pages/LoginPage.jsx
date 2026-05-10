@@ -3,6 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import logoFatexpo from '../imagens/Fatexpo-01.png';
 
+function getRedirectPath() {
+  try {
+    const token = localStorage.getItem('@App:token');
+    if (!token) return '/reconhecimento-facial';
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const raw = payload?.permission ?? [];
+    const permissions = Array.isArray(raw) ? raw : [raw];
+    return permissions.includes('Events:Manage') ? '/eventos' : '/reconhecimento-facial';
+  } catch {
+    return '/reconhecimento-facial';
+  }
+}
+
 export default function LoginPage() {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +29,7 @@ export default function LoginPage() {
     setError('');
     try {
       await authService.login(email, password);
-      navigate('/eventos');
+      navigate(getRedirectPath());
     } catch {
       setError('Falha ao autenticar. Verifique suas credenciais.');
     } finally {
@@ -24,48 +37,16 @@ export default function LoginPage() {
     }
   };
 
-  const handleLoginSemSenha = () => {
-    const now = Math.floor(Date.now() / 1000);
-
-    const header = { alg: 'none', typ: 'JWT' };
-    const payload = {
-      sub: 'dev-user',
-      email: email || 'dev@fatecweek.local',
-      permission: [
-        'Events:Manage',
-        'Exhibitors:Manage',
-        'Lectures:Manage',
-        'Booths:Manage',
-      ],
-      iat: now,
-      exp: now + 60 * 60 * 24,
-    };
-
-    const encodeBase64Url = (obj) =>
-      btoa(JSON.stringify(obj))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-
-    const fakeToken = `${encodeBase64Url(header)}.${encodeBase64Url(payload)}.`;
-    localStorage.setItem('@App:token', fakeToken);
-    navigate('/eventos');
-  };
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f5' }}>
       <header className="header">
         <div className="header-content" style={{ justifyContent: 'center' }}>
-
-          <img 
-            src={logoFatexpo} 
-            alt="FatecWeek" 
-            className="logo-principal" 
-            onClick={() => navigate('/eventos')} 
-            // Forçando a largura para 200 pixels para ter certeza que ela vai aparecer
-            style={{ cursor: 'pointer', width: '200px', height: 'auto', display: 'block' }} 
+          <img
+            src={logoFatexpo}
+            alt="FatecWeek"
+            className="logo-principal"
+            style={{ width: '200px', height: 'auto', display: 'block' }}
           />
-          
         </div>
       </header>
 
@@ -117,15 +98,6 @@ export default function LoginPage() {
               style={{ width: '100%', opacity: loading ? 0.75 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleLoginSemSenha}
-              style={{ width: '100%' }}
-            >
-              Entrar sem senha (temporario)
             </button>
           </form>
         </div>

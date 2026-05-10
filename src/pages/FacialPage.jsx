@@ -1,22 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { facialService } from '../services/facialService';
 import { eventService } from '../services/eventService';
-
-const COURSES_BY_PREFIX = {
-  '01': 'Automação Industrial',
-  '02': 'Desenvolvimento de Software Multiplataforma',
-  '03': 'Gestão Empresarial (EaD)',
-  '04': 'Gestão Financeira',
-  '05': 'Manutenção Industrial',
-  '06': 'Redes de Computadores',
-  '07': 'Sistemas Biomédicos',
-};
-
-function inferCourseFromRa(ra) {
-  const clean = String(ra || '').replace(/\D/g, '');
-  const prefix = clean.slice(0, 2);
-  return COURSES_BY_PREFIX[prefix] || 'Curso não identificado';
-}
+import { inferirCurso, inferirUnidade, limparRA, formatarRA } from '../utils/raUtils';
 
 export default function FacialPage() {
   const videoRef  = useRef(null);
@@ -31,7 +16,9 @@ export default function FacialPage() {
   const [raSaida, setRaSaida] = useState('');
   const [eventos, setEventos] = useState([]);
   const [eventoSelecionado, setEventoSelecionado] = useState('');
-  const [cursoEntrada, setCursoEntrada] = useState('');
+  const [cursoEntrada, setCursoEntrada]   = useState('');
+  const [unidadeEntrada, setUnidadeEntrada] = useState('');
+  const [raValido, setRaValido]             = useState(false);
   const [entryMethod, setEntryMethod] = useState('scanner');
   const [refusedPhoto, setRefusedPhoto] = useState(false);
 
@@ -238,13 +225,15 @@ export default function FacialPage() {
     try {
       const aluno = await facialService.lookupByRa(raEntrada.trim());
       const nome = aluno?.nomeCompleto || aluno?.NomeCompleto || aluno?.name || aluno?.fullName || aluno?.userName || 'Aluno identificado';
-      const curso = aluno?.curso || aluno?.Curso || aluno?.course || aluno?.courseName || inferCourseFromRa(raEntrada.trim());
+      const curso = aluno?.curso || aluno?.Curso || aluno?.course || aluno?.courseName || inferirCurso(raEntrada.trim());
       setCursoEntrada(curso);
+      setUnidadeEntrada(inferirUnidade(raEntrada.trim()));
       setMensagem(`RA validado: ${nome} — ${curso}`);
       setSucesso(true);
     } catch {
-      const curso = inferCourseFromRa(raEntrada.trim());
+      const curso = inferirCurso(raEntrada.trim());
       setCursoEntrada(curso);
+      setUnidadeEntrada(inferirUnidade(raEntrada.trim()));
       setMensagem(`RA informado. Curso inferido: ${curso}.`);
       setSucesso(true);
     } finally {
@@ -270,7 +259,7 @@ export default function FacialPage() {
 
     try {
       const ra = raEntrada.trim();
-      const curso = cursoEntrada || inferCourseFromRa(ra);
+      const curso = cursoEntrada || inferirCurso(ra);
       let payload = {
         ra,
         eventoId: Number(eventoSelecionado),
@@ -444,8 +433,21 @@ export default function FacialPage() {
               type="text"
               placeholder="RA do aluno"
               value={raEntrada}
-              onChange={(e) => setRaEntrada(e.target.value)}
-              style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '8px', flex: '1 1 220px' }}
+              onChange={(e) => {
+                const val = e.target.value;
+                setRaEntrada(val);
+                const { valido } = limparRA(val);
+                setRaValido(valido);
+                if (valido) {
+                  setCursoEntrada(inferirCurso(val));
+                  setUnidadeEntrada(inferirUnidade(val));
+                } else {
+                  setCursoEntrada('');
+                  setUnidadeEntrada('');
+                }
+              }}
+              maxLength={13}
+              style={{ padding: '10px', border: `1px solid ${raEntrada.length > 0 ? (raValido ? '#28a745' : '#dc3545') : '#ddd'}`, borderRadius: '8px', flex: '1 1 220px' }}
             />
             <select
               value={entryMethod}
@@ -461,8 +463,15 @@ export default function FacialPage() {
             <button className="btn btn-secondary" onClick={handleBuscarAlunoPorRa} disabled={loading} style={{ marginRight: '10px' }}>
               Validar RA
             </button>
-            {cursoEntrada && (
-              <span style={{ color: '#555', fontWeight: 'bold' }}>Curso: {cursoEntrada}</span>
+            {raEntrada.length > 0 && !raValido && (
+              <span style={{ color: '#dc3545', fontSize: '13px' }}>RA deve ter 13 dígitos numéricos ({limparRA(raEntrada).limpo.length}/13)</span>
+            )}
+            {raValido && cursoEntrada && (
+              <div style={{ marginTop: '6px', fontSize: '13px', color: '#555' }}>
+                <span><strong>Curso:</strong> {cursoEntrada}</span>
+                {unidadeEntrada && <span style={{ marginLeft: '16px' }}><strong>Unidade:</strong> {unidadeEntrada}</span>}
+                <span style={{ marginLeft: '16px' }}><strong>RA formatado:</strong> {formatarRA(raEntrada)}</span>
+              </div>
             )}
           </div>
 

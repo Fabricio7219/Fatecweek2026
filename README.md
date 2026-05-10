@@ -1,17 +1,41 @@
-# FatecWeek
+# FatecWeek — Frontend
 
-Sistema de gerenciamento de acesso da 15a FatecWeek Osasco.
+Sistema de gerenciamento de eventos da FatecWeek Osasco.  
+Desenvolvido com **React 19 + Vite**, consome a API REST em ASP.NET Core 8.
 
-## Como o backend integra no frontend
+---
 
-O projeto React usa Axios centralizado em `src/api.js`.
+## Visão geral
 
-- Base URL da API: `VITE_API_URL`.
-- Se `VITE_API_URL` nao existir, usa `http://localhost:5000`.
-- Token JWT fica no LocalStorage na chave `@App:token`.
-- Todas as chamadas enviam `Authorization: Bearer <token>` automaticamente.
+O sistema possui dois perfis de acesso:
 
-## 1) Configurar URL do backend
+| Perfil | Acesso após login |
+|--------|-------------------|
+| **Admin** | Painel completo: Eventos, Expositores, Palestras, Estandes, Mesários, Relatório |
+| **Mesário** | Somente a tela de Reconhecimento Facial (check-in de alunos) |
+
+O redirecionamento é feito automaticamente com base nas permissões do token JWT.
+
+---
+
+## Pré-requisitos
+
+- Node.js 18+
+- npm 9+
+- Backend `FatecWeek-API` rodando (ver README da API)
+
+---
+
+## Instalação
+
+```bash
+# Na raiz do projeto (FatecWeek/)
+npm install
+```
+
+---
+
+## Configuração
 
 Crie o arquivo `.env.local` na raiz do projeto:
 
@@ -19,15 +43,112 @@ Crie o arquivo `.env.local` na raiz do projeto:
 VITE_API_URL=http://localhost:5000
 ```
 
-Se sua API rodar em outra porta/host, altere esse valor.
+Se a API rodar em outra porta ou host, altere esse valor.  
+Se o arquivo não existir, o frontend usa `http://localhost:5000` por padrão.
 
-## 2) Subir backend e frontend
+---
 
-Backend (ASP.NET):
+## Executar em desenvolvimento
 
 ```bash
-dotnet run
+npm run dev
 ```
+
+Acesse: **http://localhost:5173**
+
+---
+
+## Build para produção
+
+```bash
+npm run build
+```
+
+Os arquivos estáticos são gerados na pasta `dist/`.  
+Use `npm run preview` para testar o build localmente.
+
+---
+
+## Estrutura de pastas
+
+```
+src/
+├── api.js                  # Instância Axios com interceptor de token
+├── App.jsx                 # Configuração de rotas
+├── main.jsx                # Ponto de entrada React
+├── components/
+│   ├── Layout.jsx          # Header (nav adaptativo por perfil) + footer
+│   └── ProtectedRoute.jsx  # Proteção de rotas por permissão JWT
+├── pages/
+│   ├── LoginPage.jsx       # Tela de login
+│   ├── EventosPage.jsx     # CRUD de eventos
+│   ├── ExpositoresPage.jsx # CRUD de expositores
+│   ├── PalestrasPage.jsx   # CRUD de palestras
+│   ├── EstandesPage.jsx    # CRUD de estandes
+│   ├── MesariosPage.jsx    # CRUD de mesários (admin)
+│   ├── FacialPage.jsx      # Check-in com câmera + digitação de RA
+│   └── RelatorioPage.jsx   # Relatório de presenças e pontuações
+├── services/
+│   ├── authService.js      # Login / logout
+│   ├── eventService.js     # Eventos
+│   ├── exhibitorService.js # Expositores
+│   ├── lectureService.js   # Palestras
+│   ├── boothService.js     # Estandes
+│   ├── facialService.js    # Check-in facial
+│   ├── reportService.js    # Relatórios
+│   └── userService.js      # Usuários / mesários
+├── utils/
+│   ├── raUtils.js          # Parsing e validação do RA (13 dígitos)
+│   └── imageProcessor.js   # Conversão de imagem para Base64 (mínimo 100×100 px)
+└── styles/
+    └── style.css
+```
+
+---
+
+## Autenticação
+
+- O login envia `POST /api/auth/login` com `{ email, password }`.
+- O token JWT retornado é salvo em `localStorage` na chave `@App:token`.
+- Todas as requisições subsequentes enviam `Authorization: Bearer <token>` automaticamente via interceptor do Axios.
+- O token contém o claim `permission` (array de strings) usado para controlar acesso a rotas e elementos de UI.
+
+### Permissões por perfil
+
+| Permissão | Perfil |
+|-----------|--------|
+| `Events:Manage` | Admin |
+| `Exhibitors:Manage` | Admin |
+| `Lectures:Manage` | Admin |
+| `Booths:Manage` | Admin |
+| `CheckIn:Register` | Mesário |
+
+---
+
+## Rotas do frontend
+
+| Rota | Permissão exigida | Descrição |
+|------|-------------------|-----------|
+| `/` | — | Redireciona para `/login` |
+| `/login` | — | Tela de login |
+| `/eventos` | `Events:Manage` | Lista e gerencia eventos |
+| `/expositores` | `Events:Manage` | Lista e gerencia expositores |
+| `/palestras` | `Events:Manage` | Lista e gerencia palestras |
+| `/estandes` | `Events:Manage` | Lista e gerencia estandes |
+| `/mesarios` | `Events:Manage` | Cadastra e remove mesários |
+| `/relatorio` | `Events:Manage` | Visualiza relatório de presenças |
+| `/reconhecimento-facial` | `CheckIn:Register` | Check-in de alunos (mesário) |
+
+---
+
+## Credenciais padrão (admin)
+
+> Criadas automaticamente pelo backend na primeira execução.
+
+| Campo | Valor |
+|-------|-------|
+| Email | `admin@fatecweek.local` |
+| Senha | `Admin@2026` |
 
 Frontend:
 

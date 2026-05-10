@@ -23,146 +23,58 @@ function normalizeLecture(item = {}) {
   };
 }
 
-async function tryGet(path, params) {
-  const response = await api.get(path, params ? { params } : undefined);
-  return response.data;
-}
-
-async function tryMutate(method, path, data) {
-  const response = await api[method](path, data);
-  return response.data;
-}
-
 export const lectureService = {
   async list(params = {}) {
-    const attempts = [
-      () => tryGet('/palestras', params),
-      () => tryGet('/lectures', params),
-      () => tryGet('/api/lectures', params),
-    ];
-
-    for (const attempt of attempts) {
-      try {
-        const data = await attempt();
-        const lista = Array.isArray(data) ? data : data?.items || [];
-        return lista.map(normalizeLecture);
-      } catch {
-        // tenta o proximo endpoint
-      }
-    }
-    return [];
+    const response = await api.get('/api/palestras', Object.keys(params).length ? { params } : undefined);
+    const lista = Array.isArray(response.data) ? response.data : response.data?.items || [];
+    return lista.map(normalizeLecture);
   },
 
   async listByEvent(eventId) {
-    const attempts = [
-      () => tryGet('/palestras', { eventoId: eventId }),
-      () => tryGet('/lectures', { eventId }),
-      () => tryGet('/api/lectures', { eventId }),
-    ];
-
-    for (const attempt of attempts) {
-      try {
-        const data = await attempt();
-        const lista = Array.isArray(data) ? data : data?.items || [];
-        return lista.map(normalizeLecture);
-      } catch {
-        // tenta o proximo endpoint
-      }
-    }
-    return [];
+    const response = await api.get('/api/palestras', { params: { eventoId: eventId } });
+    const lista = Array.isArray(response.data) ? response.data : response.data?.items || [];
+    return lista.map(normalizeLecture);
   },
 
   async get(id) {
-    const attempts = [
-      () => tryGet(`/palestras/${id}`),
-      () => tryGet(`/lectures/${id}`),
-      () => tryGet(`/api/lectures/${id}`),
-    ];
-
-    for (const attempt of attempts) {
-      try {
-        const data = await attempt();
-        return normalizeLecture(data || {});
-      } catch {
-        // tenta o proximo endpoint
-      }
-    }
-    throw new Error('Nao foi possivel buscar a palestra.');
+    const response = await api.get(`/api/palestras/${id}`);
+    return normalizeLecture(response.data || {});
   },
 
   async create(data) {
-    const payloadPt = {
+    const payload = {
       eventoId: data.eventoId ?? data.eventId,
       titulo: data.titulo || data.title,
-      descricao: data.descricao || data.description,
+      descricao: data.descricao || data.description || null,
       palestrante: data.palestrante || data.speaker,
-      sala: data.sala || data.room,
-      inicio: data.inicio || data.startTime,
-      fim: data.fim || data.endTime,
+      sala: data.sala || data.room || null,
+      inicio: data.inicio || data.startTime || null,
+      fim: data.fim || data.endTime || null,
       tempoMinimoMinutos: data.tempoMinimoMinutos ?? data.minimumStayMinutes ?? 0,
       pontuacao: data.pontuacao ?? data.scoreValue ?? 0,
     };
-    const attempts = [
-      () => tryMutate('post', '/palestras', payloadPt),
-      () => tryMutate('post', '/lectures', data),
-      () => tryMutate('post', '/api/lectures', data),
-    ];
-
-    for (const attempt of attempts) {
-      try {
-        const result = await attempt();
-        return normalizeLecture(result || {});
-      } catch {
-        // tenta o proximo endpoint
-      }
-    }
-    throw new Error('Nao foi possivel criar a palestra.');
+    const response = await api.post('/api/palestras', payload);
+    return normalizeLecture(response.data || {});
   },
 
   async update(id, data) {
-    const payloadPt = {
+    const payload = {
       eventoId: data.eventoId ?? data.eventId,
       titulo: data.titulo || data.title,
-      descricao: data.descricao || data.description,
+      descricao: data.descricao || data.description || null,
       palestrante: data.palestrante || data.speaker,
-      sala: data.sala || data.room,
-      inicio: data.inicio || data.startTime,
-      fim: data.fim || data.endTime,
+      sala: data.sala || data.room || null,
+      inicio: data.inicio || data.startTime || null,
+      fim: data.fim || data.endTime || null,
       tempoMinimoMinutos: data.tempoMinimoMinutos ?? data.minimumStayMinutes ?? 0,
       pontuacao: data.pontuacao ?? data.scoreValue ?? 0,
     };
-    const attempts = [
-      () => tryMutate('put', `/palestras/${id}`, payloadPt),
-      () => tryMutate('put', `/lectures/${id}`, data),
-      () => tryMutate('put', `/api/lectures/${id}`, data),
-    ];
-
-    for (const attempt of attempts) {
-      try {
-        const result = await attempt();
-        return normalizeLecture(result || {});
-      } catch {
-        // tenta o proximo endpoint
-      }
-    }
-    throw new Error('Nao foi possivel atualizar a palestra.');
+    const response = await api.put(`/api/palestras/${id}`, payload);
+    return normalizeLecture(response.data || {});
   },
 
   async delete(id) {
-    const attempts = [
-      () => api.delete(`/palestras/${id}`),
-      () => api.delete(`/lectures/${id}`),
-      () => api.delete(`/api/lectures/${id}`),
-    ];
-
-    for (const attempt of attempts) {
-      try {
-        await attempt();
-        return true;
-      } catch {
-        // tenta o proximo endpoint
-      }
-    }
-    throw new Error('Nao foi possivel excluir a palestra.');
+    await api.delete(`/api/palestras/${id}`);
+    return true;
   },
 };

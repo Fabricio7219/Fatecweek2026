@@ -28,9 +28,8 @@ async function tryMutate(method, path, data) {
 export const boothService = {
   async list(params = {}) {
     const attempts = [
+      () => tryGet('/api/estandes', params),
       () => tryGet('/estandes', params),
-      () => tryGet('/booths', params),
-      () => tryGet('/api/booths', params),
     ];
 
     for (const attempt of attempts) {
@@ -47,9 +46,8 @@ export const boothService = {
 
   async listByEvent(eventId) {
     const attempts = [
+      () => tryGet('/api/estandes', { eventoId: eventId }),
       () => tryGet('/estandes', { eventoId: eventId }),
-      () => tryGet('/booths', { eventId }),
-      () => tryGet('/api/booths', { eventId }),
     ];
 
     for (const attempt of attempts) {
@@ -66,9 +64,8 @@ export const boothService = {
 
   async get(id) {
     const attempts = [
+      () => tryGet(`/api/estandes/${id}`),
       () => tryGet(`/estandes/${id}`),
-      () => tryGet(`/booths/${id}`),
-      () => tryGet(`/api/booths/${id}`),
     ];
 
     for (const attempt of attempts) {
@@ -89,9 +86,8 @@ export const boothService = {
       localizacao: data.localizacao || data.location,
     };
     const attempts = [
+      () => tryMutate('post', '/api/estandes', payloadPt),
       () => tryMutate('post', '/estandes', payloadPt),
-      () => tryMutate('post', '/booths', data),
-      () => tryMutate('post', '/api/booths', data),
     ];
 
     for (const attempt of attempts) {

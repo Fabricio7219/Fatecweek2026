@@ -9,6 +9,7 @@ import ExpositoresPage from './pages/ExpositoresPage';
 import PalestrasPage   from './pages/PalestrasPage';
 import EstandesPage    from './pages/EstandesPage';
 import RelatorioPage   from './pages/RelatorioPage';
+import MesariosPage    from './pages/MesariosPage';
 
 import './styles/style.css';
 
@@ -62,6 +63,12 @@ function App() {
         <Route path="/relatorio" element={
           <PrivateLayout>
             <RelatorioPage />
+          </PrivateLayout>
+        } />
+
+        <Route path="/mesarios" element={
+          <PrivateLayout requiredPolicy="Events:Manage">
+            <MesariosPage />
           </PrivateLayout>
         } />
 

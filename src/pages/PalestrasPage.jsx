@@ -134,6 +134,7 @@ export default function PalestrasPage() {
             placeholder="Pontos base"
             type="number"
             min="0"
+            step="0.1"
             value={pontuacao}
             onChange={e => setPontuacao(e.target.value)}
             style={{ ...inputStyle, flex: '1 1 140px' }}

@@ -7,13 +7,29 @@ const NAV_LINKS = [
   { path: '/expositores',          label: 'Expositores' },
   { path: '/palestras',            label: 'Palestras' },
   { path: '/estandes',             label: 'Estandes' },
+  { path: '/mesarios',             label: 'Mesários' },
   { path: '/relatorio',            label: 'Relatorio' },
   { path: '/reconhecimento-facial',label: 'Biometria' },
 ];
 
+function getPermissions() {
+  try {
+    const token = localStorage.getItem('@App:token');
+    if (!token) return [];
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const raw = payload?.permission ?? [];
+    return Array.isArray(raw) ? raw : [raw];
+  } catch {
+    return [];
+  }
+}
+
 export default function Layout({ children }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  const permissions = getPermissions();
+  const isAdmin = permissions.includes('Events:Manage');
 
   const handleLogout = () => {
     authService.logout();
@@ -24,20 +40,16 @@ export default function Layout({ children }) {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header">
         <div className="header-content">
-          {/* Logo / título da aplicação */}
-
           <img 
             src={logoFatexpo} 
             alt="FatecWeek" 
             className="logo-principal" 
-            onClick={() => navigate('/eventos')} 
-            // Forçando a largura para 200 pixels para ter certeza que ela vai aparecer
+            onClick={() => navigate(isAdmin ? '/eventos' : '/reconhecimento-facial')} 
             style={{ cursor: 'pointer', width: '200px', height: 'auto', display: 'block' }} 
           />
 
-
           <div className="header-buttons">
-            {NAV_LINKS.map(({ path, label }) => (
+            {isAdmin && NAV_LINKS.map(({ path, label }) => (
               <button
                 key={path}
                 onClick={() => navigate(path)}

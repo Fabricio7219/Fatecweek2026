@@ -29,55 +29,47 @@ function normalizeList(payload) {
 
 export const eventService = {
   async list(params = {}) {
-    try {
-      const response = await api.get('/eventos', { params });
-      return normalizeList(response.data);
-    } catch {
-      const response = await api.get('/api/events', { params });
-      return normalizeList(response.data);
-    }
+    const response = await api.get('/api/eventos', { params });
+    return normalizeList(response.data);
   },
 
   async get(id) {
-    try {
-      const response = await api.get(`/eventos/${id}`);
-      return normalizeEvento(response.data);
-    } catch {
-      const response = await api.get(`/api/events/${id}`);
-      return normalizeEvento(response.data);
-    }
+    const response = await api.get(`/api/eventos/${id}`);
+    return normalizeEvento(response.data);
   },
 
   async create(data) {
+    const toTime = (t) => t && t.length === 5 ? t + ':00' : (t || '00:00:00');
     const payload = {
       nomeEvento: data.nomeEvento || data.name || data.nome,
       tipo: data.tipo,
       data: data.data,
-      horaInicio: data.horaInicio,
-      horaFim: data.horaFim,
+      horaInicio: toTime(data.horaInicio),
+      horaFim: toTime(data.horaFim),
       pontuacao: data.pontuacao ?? data.scoreValue ?? 0,
-      tempoMinimoMinutos: data.tempoMinimoMinutos ?? data.minimumStayMinutes ?? 0,
+      tempoMinimoMinutos: data.tempoMinimoMinutos ?? data.minimumStayMinutos ?? data.minimumStayMinutes ?? 0,
     };
-    const response = await api.post('/eventos', payload);
+    const response = await api.post('/api/eventos', payload);
     return response.data;
   },
 
   async update(id, data) {
+    const toTime = (t) => t && t.length === 5 ? t + ':00' : (t || '00:00:00');
     const payload = {
       nomeEvento: data.nomeEvento || data.name || data.nome,
       tipo: data.tipo,
       data: data.data,
-      horaInicio: data.horaInicio,
-      horaFim: data.horaFim,
+      horaInicio: toTime(data.horaInicio),
+      horaFim: toTime(data.horaFim),
       pontuacao: data.pontuacao ?? data.scoreValue ?? 0,
-      tempoMinimoMinutos: data.tempoMinimoMinutos ?? data.minimumStayMinutes ?? 0,
+      tempoMinimoMinutos: data.tempoMinimoMinutos ?? data.minimumStayMinutos ?? data.minimumStayMinutes ?? 0,
     };
-    const response = await api.put(`/eventos/${id}`, payload);
+    const response = await api.put(`/api/eventos/${id}`, payload);
     return response.data;
   },
 
   async delete(id) {
-    await api.delete(`/eventos/${id}`);
+    await api.delete(`/api/eventos/${id}`);
     return true;
   },
 

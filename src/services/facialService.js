@@ -94,12 +94,7 @@ export const facialService = {
   async lookupByRa(ra) {
     const cleanRa = String(ra || '').trim();
     return tryGet([
-      { url: `/alunos/ra/${cleanRa}` },
-      { url: `/api/users/by-ra/${cleanRa}` },
-      { url: `/api/users/ra/${cleanRa}` },
-      { url: '/api/users/by-ra', params: { ra: cleanRa } },
-      { url: `/api/students/by-ra/${cleanRa}` },
-      { url: '/api/students/by-ra', params: { ra: cleanRa } },
+      { url: `/api/alunos/por-ra/${cleanRa}` },
     ]);
   },
 
@@ -109,13 +104,17 @@ export const facialService = {
     if (!ra) throw new Error('RA nao informado para entrada.');
     if (!Number.isFinite(eventoId) || eventoId <= 0) throw new Error('Evento nao selecionado para entrada.');
 
+    // Busca o id inteiro do aluno pelo RA
+    const aluno = await tryGet([{ url: `/api/alunos/por-ra/${ra}` }]);
+    if (!aluno?.id) throw new Error('Aluno não encontrado para este RA.');
+
     let fotoCheckin;
     if (payload?.photoBlob && payload?.photoLinked !== false) {
       fotoCheckin = await blobToBase64(payload.photoBlob);
     }
 
     const body = {
-      ra,
+      alunoId: aluno.id,
       eventoId,
       faceValidado: payload?.refusedPhoto ? false : Boolean(payload?.photoLinked),
       tipoParticipacao: 'visitante',
@@ -123,9 +122,7 @@ export const facialService = {
     };
 
     return tryPost([
-      { url: '/checkins/entrada' },
-      { url: '/api/attendance/entry' },
-      { url: '/api/check-ins/entry' },
+      { url: '/api/checkins/entrada' },
     ], body);
   },
 
@@ -135,17 +132,20 @@ export const facialService = {
     if (!ra) throw new Error('RA nao informado para saida.');
     if (!Number.isFinite(eventoId) || eventoId <= 0) throw new Error('Evento nao selecionado para saida.');
 
-    const ativo = await tryGet([
-      { url: '/checkins/ativo', params: { alunoId: ra, eventoId } },
+    const aluno = await tryGet([
+      { url: `/api/alunos/por-ra/${ra}` },
     ]);
+    if (!aluno?.id) throw new Error('Aluno não encontrado para este RA.');
 
-    const checkinId = ativo?.id;
-    if (!checkinId) {
-      throw new Error('Nao foi encontrado check-in ativo para este RA neste evento.');
-    }
+    const checkins = await tryGet([
+      { url: '/api/checkins', params: { alunoId: aluno.id, eventoId } },
+    ]);
+    const lista = Array.isArray(checkins) ? checkins : [];
+    const ativo = lista.find(c => !c.horarioSaida);
+    if (!ativo?.id) throw new Error('Nao foi encontrado check-in ativo para este RA neste evento.');
 
     return tryPatch([
-      { url: `/checkins/${checkinId}/saida` },
-    ], { ra });
+      { url: `/api/checkins/${ativo.id}/saida` },
+    ], {});
   },
 };
