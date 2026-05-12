@@ -17,7 +17,7 @@ export const reportService = {
       semester: c.semestre || c.Semestre || '',
       shift: c.turno || c.Turno || '',
       stayMinutes: c.tempoMinutos ?? c.TempoMinutos ?? null,
-      totalPoints: c.pontuacaoObtida ?? c.PontuacaoObtida ?? 0,
+      totalPoints: c.pontuacaoObtida ?? c.PontuacaoObtida ?? null,
       isValid: c.faceValidado ?? c.FaceValidado ?? false,
       entryTime: c.horarioEntrada || c.HorarioEntrada || null,
       exitTime: c.horarioSaida || c.HorarioSaida || null,

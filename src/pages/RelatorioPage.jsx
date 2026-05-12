@@ -15,7 +15,7 @@ const CURSOS = [
 ];
 
 const SEMESTRES = ['1', '2', '3', '4', '5', '6', '7', '8'];
-const TURNOS = ['Matutino', 'Vespertino', 'Noturno', 'Integral', 'EaD'];
+const TURNOS = ['Manhã', 'Tarde', 'Noite', 'EaD'];
 
 function toNumber(value, fallback = 0) {
   const n = Number(value);
@@ -93,9 +93,9 @@ function resolveExitMethod(linha) {
 }
 
 function resolvePhotoLinked(linha) {
-  const value = linha.photoLinked ?? linha.fotoVinculada ?? linha.hasFaceEnrollment ?? linha.hasPhoto;
-  if (value === true) return 'Sim';
-  if (value === false) return 'Não';
+  const value = linha.photoLinked ?? linha.fotoVinculada ?? linha.hasFaceEnrollment ?? linha.hasPhoto ?? linha.isValid ?? linha.faceValidado ?? linha.FaceValidado;
+  if (value === true || value === 1) return 'Sim';
+  if (value === false || value === 0) return 'Não';
   return '—';
 }
 
@@ -241,15 +241,16 @@ export default function RelatorioPage() {
       const validoApi = resolveValidValue(linha);
       const valido = typeof validoApi === 'boolean' ? validoApi : (minimo > 0 ? permanencia >= minimo : true);
       const pontosBase = toNumber(linha.scoreValue ?? linha.pontuacao ?? linha.Pontuacao ?? regra.scoreValue, 0);
-      const pontosFinalApi = linha.finalScore ?? linha.pontosFinais ?? linha.totalPoints ?? linha.pontuacao ?? linha.Pontuacao;
-      const pontosFinais = Number.isFinite(Number(pontosFinalApi)) ? Number(pontosFinalApi) : (valido ? pontosBase : 0);
-      const entrada = resolveDateValue(linha, ['checkInAt', 'entryAt', 'entradaEm', 'checkIn']);
-      const saida   = resolveDateValue(linha, ['checkOutAt', 'exitAt', 'saidaEm', 'checkOut']);
+      const pontosFinalApi = linha.finalScore ?? linha.pontosFinais ?? linha.totalPoints;
+      const pontosFinais = (pontosFinalApi != null && Number.isFinite(Number(pontosFinalApi))) ? Number(pontosFinalApi) : (valido ? pontosBase : 0);
+      const entrada = resolveDateValue(linha, ['entryTime', 'checkInAt', 'entryAt', 'entradaEm', 'checkIn', 'HorarioEntrada', 'horarioEntrada']);
+      const saida   = resolveDateValue(linha, ['exitTime', 'checkOutAt', 'exitAt', 'saidaEm', 'checkOut', 'HorarioSaida', 'horarioSaida']);
 
       return [
         resolveCourseValue(linha),
         resolveSemesterValue(linha) || '—',
         resolveShiftValue(linha) || '—',
+        linha.ra || linha.Ra || '—',
         linha.userName || linha.name || linha.nome || '—',
         resolveEntryMethod(linha),
         resolvePhotoLinked(linha),
@@ -264,14 +265,14 @@ export default function RelatorioPage() {
 
     autoTable(doc, {
       startY: 35,
-      head: [['Curso', 'Sem.', 'Turno', 'Participante', 'Método entrada', 'Foto', 'Método saída', 'Entrada', 'Saída', 'Perm. (min)', 'Status', 'Pontos']],
+      head: [['Curso', 'Sem.', 'Turno', 'RA', 'Participante', 'Método entrada', 'Foto', 'Método saída', 'Entrada', 'Saída', 'Perm. (min)', 'Status', 'Pontos']],
       body: linhas,
       headStyles: { fillColor: [196, 30, 58], textColor: 255, fontStyle: 'bold', fontSize: 8 },
       bodyStyles: { fontSize: 8 },
       alternateRowStyles: { fillColor: [255, 245, 245] },
       didDrawCell: (data) => {
         // Colorir coluna Status
-        if (data.section === 'body' && data.column.index === 10) {
+        if (data.section === 'body' && data.column.index === 11) {
           const isValido = data.cell.raw === 'Válido';
           doc.setTextColor(isValido ? 40 : 180, isValido ? 167 : 30, isValido ? 69 : 30);
           doc.text(data.cell.raw, data.cell.x + 2, data.cell.y + data.cell.height / 2 + 1, { baseline: 'middle' });
@@ -471,7 +472,7 @@ export default function RelatorioPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #c41e3a' }}>
-                  {['Curso', 'Semestre', 'Turno', 'Participante', 'Método entrada', 'Foto vinculada', 'Método saída', 'Entrada', 'Saída', 'Permanência (min)', 'Status', 'Pontos finais'].map(h => (
+                  {['Curso', 'Semestre', 'Turno', 'RA', 'Participante', 'Método entrada', 'Foto vinculada', 'Método saída', 'Entrada', 'Saída', 'Permanência (min)', 'Status', 'Pontos finais'].map(h => (
                     <th key={h} style={{ padding: '10px 8px', color: '#c41e3a', fontWeight: 'bold' }}>{h}</th>
                   ))}
                 </tr>
@@ -486,13 +487,13 @@ export default function RelatorioPage() {
                   const validoApi = resolveValidValue(linha);
                   const valido = typeof validoApi === 'boolean' ? validoApi : (minimo > 0 ? permanencia >= minimo : true);
                   const pontosBase = toNumber(linha.scoreValue ?? linha.pontuacao ?? linha.Pontuacao ?? regra.scoreValue, 0);
-                  const pontosFinalApi = linha.finalScore ?? linha.pontosFinais ?? linha.totalPoints ?? linha.pontuacao ?? linha.Pontuacao;
-                  const pontosFinais = Number.isFinite(Number(pontosFinalApi))
+                  const pontosFinalApi = linha.finalScore ?? linha.pontosFinais ?? linha.totalPoints;
+                  const pontosFinais = (pontosFinalApi != null && Number.isFinite(Number(pontosFinalApi)))
                     ? Number(pontosFinalApi)
                     : (valido ? pontosBase : 0);
 
-                  const entrada = resolveDateValue(linha, ['checkInAt', 'entryAt', 'entradaEm', 'checkIn']);
-                  const saida = resolveDateValue(linha, ['checkOutAt', 'exitAt', 'saidaEm', 'checkOut']);
+                  const entrada = resolveDateValue(linha, ['entryTime', 'checkInAt', 'entryAt', 'entradaEm', 'checkIn', 'HorarioEntrada', 'horarioEntrada']);
+                  const saida = resolveDateValue(linha, ['exitTime', 'checkOutAt', 'exitAt', 'saidaEm', 'checkOut', 'HorarioSaida', 'horarioSaida']);
                   const curso = resolveCourseValue(linha);
                   const semestre = resolveSemesterValue(linha) || '—';
                   const turno = resolveShiftValue(linha) || '—';
@@ -505,6 +506,7 @@ export default function RelatorioPage() {
                       <td style={{ padding: '12px 8px' }}>{curso}</td>
                       <td style={{ padding: '12px 8px' }}>{semestre}</td>
                       <td style={{ padding: '12px 8px' }}>{turno}</td>
+                      <td style={{ padding: '12px 8px', fontFamily: 'monospace', fontSize: '13px' }}>{linha.ra || linha.Ra || '—'}</td>
                       <td style={{ padding: '12px 8px' }}>{linha.userName || linha.name || linha.nome || '—'}</td>
                       <td style={{ padding: '12px 8px' }}>{metodoEntrada}</td>
                       <td style={{ padding: '12px 8px' }}>{fotoVinculada}</td>
@@ -525,7 +527,7 @@ export default function RelatorioPage() {
                 })}
                 {dadosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan="12" style={{ textAlign: 'center', color: '#888', padding: '18px' }}>
+                    <td colSpan="13" style={{ textAlign: 'center', color: '#888', padding: '18px' }}>
                       Nenhum resultado para os filtros selecionados.
                     </td>
                   </tr>

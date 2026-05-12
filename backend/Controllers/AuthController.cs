@@ -16,8 +16,9 @@ public class AuthController(AppDbContext db, JwtService jwt) : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
+        // Aceita login por e-mail OU por username
         var usuario = await db.Usuarios
-            .FirstOrDefaultAsync(u => u.Email == req.Email);
+            .FirstOrDefaultAsync(u => u.Email == req.Email || u.UserName == req.Email);
 
         if (usuario is null || !BCrypt.Net.BCrypt.Verify(req.Password, usuario.SenhaHash))
             return Unauthorized(new { message = "Credenciais inválidas." });

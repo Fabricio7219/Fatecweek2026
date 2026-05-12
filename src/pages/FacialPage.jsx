@@ -1,10 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
 import { facialService } from '../services/facialService';
 import { eventService } from '../services/eventService';
-import { inferirCurso, inferirUnidade, limparRA, formatarRA } from '../utils/raUtils';
+import { inferirCurso, inferirUnidade, inferirTurno, limparRA, formatarRA } from '../utils/raUtils';
 
 const SEMESTRES = ['1', '2', '3', '4', '5', '6', '7', '8'];
-const TURNOS    = ['Matutino', 'Vespertino', 'Noturno', 'Integral', 'EaD'];
+const TURNOS    = ['Manhã', 'Tarde', 'Noite', 'EaD'];
 
 export default function FacialPage() {
   const videoRef  = useRef(null);
@@ -233,12 +233,14 @@ export default function FacialPage() {
       const curso = aluno?.curso || aluno?.Curso || aluno?.course || aluno?.courseName || inferirCurso(raEntrada.trim());
       setCursoEntrada(curso);
       setUnidadeEntrada(inferirUnidade(raEntrada.trim()));
+      setTurnoEntrada(prev => prev || inferirTurno(raEntrada.trim()));
       setMensagem(`RA validado: ${nome} — ${curso}`);
       setSucesso(true);
     } catch {
       const curso = inferirCurso(raEntrada.trim());
       setCursoEntrada(curso);
       setUnidadeEntrada(inferirUnidade(raEntrada.trim()));
+      setTurnoEntrada(prev => prev || inferirTurno(raEntrada.trim()));
       setMensagem(`RA informado. Curso inferido: ${curso}.`);
       setSucesso(true);
     } finally {
@@ -448,9 +450,11 @@ export default function FacialPage() {
                 if (valido) {
                   setCursoEntrada(inferirCurso(val));
                   setUnidadeEntrada(inferirUnidade(val));
+                  setTurnoEntrada(inferirTurno(val));
                 } else {
                   setCursoEntrada('');
                   setUnidadeEntrada('');
+                  setTurnoEntrada('');
                 }
               }}
               maxLength={13}

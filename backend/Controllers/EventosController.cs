@@ -23,7 +23,7 @@ public class EventosController(AppDbContext db) : ControllerBase
             .OrderBy(e => e.Data).ThenBy(e => e.HoraInicio)
             .Select(e => new {
                 e.Id, e.NomeEvento, e.Tipo, e.Data,
-                e.HoraInicio, e.HoraFim, e.Pontuacao, e.CreatedAt
+                e.HoraInicio, e.HoraFim, e.Pontuacao, e.TempoMinimoMinutos, e.CreatedAt
             }).ToListAsync();
         return Ok(lista);
     }
