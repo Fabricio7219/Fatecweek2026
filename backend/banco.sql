@@ -32,6 +32,8 @@ CREATE TABLE alunos (
     ra              VARCHAR(20)  NOT NULL UNIQUE,
     nome_completo   VARCHAR(255) NOT NULL,
     curso           VARCHAR(100),
+    semestre        VARCHAR(10),
+    turno           VARCHAR(20),
     email           VARCHAR(150),
     foto_referencia VARCHAR(MAX),
     created_at      DATETIME DEFAULT GETDATE()

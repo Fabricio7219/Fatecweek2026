@@ -13,7 +13,10 @@ public class AlunosController(AppDbContext db) : ControllerBase
 {
     public record AlunoRequest(
         string Ra, string NomeCompleto,
-        string? Curso, string? Email, string? FotoReferencia);
+        string? Curso, string? Semestre, string? Turno,
+        string? Email, string? FotoReferencia);
+
+    public record CheckinInfoRequest(string? Semestre, string? Turno);
 
     [HttpGet]
     public async Task<IActionResult> Listar([FromQuery] string? ra)
@@ -23,7 +26,7 @@ public class AlunosController(AppDbContext db) : ControllerBase
             query = query.Where(a => a.Ra == ra);
 
         var lista = await query
-            .Select(a => new { a.Id, a.Ra, a.NomeCompleto, a.Curso, a.Email, a.CreatedAt })
+            .Select(a => new { a.Id, a.Ra, a.NomeCompleto, a.Curso, a.Semestre, a.Turno, a.Email, a.CreatedAt })
             .ToListAsync();
         return Ok(lista);
     }
@@ -54,6 +57,8 @@ public class AlunosController(AppDbContext db) : ControllerBase
             Ra             = req.Ra,
             NomeCompleto   = req.NomeCompleto,
             Curso          = req.Curso,
+            Semestre       = req.Semestre,
+            Turno          = req.Turno,
             Email          = req.Email,
             FotoReferencia = req.FotoReferencia,
         };
@@ -71,10 +76,26 @@ public class AlunosController(AppDbContext db) : ControllerBase
 
         aluno.NomeCompleto   = req.NomeCompleto;
         aluno.Curso          = req.Curso;
+        aluno.Semestre       = req.Semestre;
+        aluno.Turno          = req.Turno;
         aluno.Email          = req.Email;
         aluno.FotoReferencia = req.FotoReferencia;
 
         await db.SaveChangesAsync();
         return Ok(aluno);
+    }
+
+    // PATCH /api/alunos/{id}/checkin-info — atualiza semestre e turno durante o check-in
+    [HttpPatch("{id}/checkin-info")]
+    public async Task<IActionResult> AtualizarCheckinInfo(int id, [FromBody] CheckinInfoRequest req)
+    {
+        var aluno = await db.Alunos.FindAsync(id);
+        if (aluno is null) return NotFound();
+
+        if (!string.IsNullOrWhiteSpace(req.Semestre)) aluno.Semestre = req.Semestre;
+        if (!string.IsNullOrWhiteSpace(req.Turno))    aluno.Turno    = req.Turno;
+
+        await db.SaveChangesAsync();
+        return Ok(new { aluno.Id, aluno.Ra, aluno.Semestre, aluno.Turno });
     }
 }

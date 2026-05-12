@@ -99,4 +99,58 @@ public class PontuacoesController(AppDbContext db) : ControllerBase
             Alunos      = pontuacoes,
         });
     }
+
+    // GET /api/pontuacoes/consolidado?eventoIds=1,2,3
+    // Relatório consolidado: pontos por aluno discriminados por evento + total
+    [HttpGet("consolidado")]
+    public async Task<IActionResult> Consolidado([FromQuery] string eventoIds)
+    {
+        var ids = (eventoIds ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => int.TryParse(x.Trim(), out var n) ? n : 0)
+            .Where(n => n > 0)
+            .ToList();
+
+        if (ids.Count == 0)
+            return BadRequest(new { message = "Informe ao menos um eventoId." });
+
+        var eventos = await db.Eventos
+            .Where(e => ids.Contains(e.Id))
+            .OrderBy(e => e.Data)
+            .Select(e => new { e.Id, e.NomeEvento, Data = e.Data.ToString("dd/MM/yyyy"), e.Pontuacao })
+            .ToListAsync();
+
+        var pontuacoes = await db.Pontuacoes
+            .Include(p => p.Aluno)
+            .Where(p => ids.Contains(p.EventoId))
+            .ToListAsync();
+
+        var alunos = pontuacoes
+            .GroupBy(p => new { p.AlunoId, p.Aluno.Ra, p.Aluno.NomeCompleto, p.Aluno.Curso, p.Aluno.Semestre, p.Aluno.Turno })
+            .Select(g => new
+            {
+                g.Key.Ra,
+                Nome             = g.Key.NomeCompleto,
+                Curso            = g.Key.Curso ?? "Não informado",
+                Semestre         = g.Key.Semestre ?? "—",
+                Turno            = g.Key.Turno    ?? "—",
+                PontosPorEvento  = eventos.Select(ev => new
+                {
+                    ev.Id,
+                    ev.NomeEvento,
+                    ev.Data,
+                    Pontos = g.FirstOrDefault(p => p.EventoId == ev.Id)?.PontuacaoObtida ?? 0m,
+                }).ToList(),
+                TotalPontos = g.Sum(p => p.PontuacaoObtida),
+            })
+            .OrderByDescending(a => a.TotalPontos)
+            .ToList();
+
+        return Ok(new
+        {
+            Eventos    = eventos,
+            TotalAlunos = alunos.Count,
+            Alunos     = alunos,
+        });
+    }
 }

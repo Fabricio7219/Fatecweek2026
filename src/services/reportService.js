@@ -29,4 +29,12 @@ export const reportService = {
     const response = await api.get(`/api/checkins/relatorio/${eventId}`);
     return response.data;
   },
+
+  // GET /api/pontuacoes/consolidado?eventoIds=1,2,3
+  // Retorna por aluno: pontos de cada evento + total
+  async getConsolidated(eventIds) {
+    const ids = Array.isArray(eventIds) ? eventIds.join(',') : eventIds;
+    const response = await api.get(`/api/pontuacoes/consolidado`, { params: { eventoIds: ids } });
+    return response.data; // { Eventos: [...], TotalAlunos, Alunos: [...] }
+  },
 };

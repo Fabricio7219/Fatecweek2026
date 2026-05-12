@@ -24,6 +24,14 @@ public class Aluno
     [StringLength(100)]
     public string? Curso { get; set; }
 
+    [Column("semestre")]
+    [StringLength(10)]
+    public string? Semestre { get; set; }
+
+    [Column("turno")]
+    [StringLength(20)]
+    public string? Turno { get; set; }
+
     [Column("email")]
     [StringLength(150)]
     public string? Email { get; set; }

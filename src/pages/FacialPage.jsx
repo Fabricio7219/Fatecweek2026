@@ -3,6 +3,9 @@ import { facialService } from '../services/facialService';
 import { eventService } from '../services/eventService';
 import { inferirCurso, inferirUnidade, limparRA, formatarRA } from '../utils/raUtils';
 
+const SEMESTRES = ['1', '2', '3', '4', '5', '6', '7', '8'];
+const TURNOS    = ['Matutino', 'Vespertino', 'Noturno', 'Integral', 'EaD'];
+
 export default function FacialPage() {
   const videoRef  = useRef(null);
   const canvasRef = useRef(null);
@@ -18,6 +21,8 @@ export default function FacialPage() {
   const [eventoSelecionado, setEventoSelecionado] = useState('');
   const [cursoEntrada, setCursoEntrada]   = useState('');
   const [unidadeEntrada, setUnidadeEntrada] = useState('');
+  const [semestreEntrada, setSemestreEntrada] = useState('');
+  const [turnoEntrada, setTurnoEntrada]       = useState('');
   const [raValido, setRaValido]             = useState(false);
   const [entryMethod, setEntryMethod] = useState('scanner');
   const [refusedPhoto, setRefusedPhoto] = useState(false);
@@ -264,6 +269,8 @@ export default function FacialPage() {
         ra,
         eventoId: Number(eventoSelecionado),
         course: curso,
+        semestre: semestreEntrada,
+        turno: turnoEntrada,
         entryMethod,
         photoLinked: !refusedPhoto,
         refusedPhoto,
@@ -473,6 +480,31 @@ export default function FacialPage() {
                 <span style={{ marginLeft: '16px' }}><strong>RA formatado:</strong> {formatarRA(raEntrada)}</span>
               </div>
             )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+            <div style={{ flex: '1 1 140px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px', color: '#555', fontSize: '13px' }}>Semestre</label>
+              <select
+                value={semestreEntrada}
+                onChange={(e) => setSemestreEntrada(e.target.value)}
+                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '8px', width: '100%' }}
+              >
+                <option value="">-- Selecione --</option>
+                {SEMESTRES.map((s) => <option key={s} value={s}>{s}º semestre</option>)}
+              </select>
+            </div>
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px', color: '#555', fontSize: '13px' }}>Turno</label>
+              <select
+                value={turnoEntrada}
+                onChange={(e) => setTurnoEntrada(e.target.value)}
+                style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '8px', width: '100%' }}
+              >
+                <option value="">-- Selecione --</option>
+                {TURNOS.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
           </div>
 
           <label style={{ display: 'block', marginBottom: '12px', color: '#555' }}>

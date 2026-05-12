@@ -108,6 +108,18 @@ export const facialService = {
     const aluno = await tryGet([{ url: `/api/alunos/por-ra/${ra}` }]);
     if (!aluno?.id) throw new Error('Aluno não encontrado para este RA.');
 
+    // Atualiza semestre e turno se preenchidos pelo mesário
+    if (payload?.semestre || payload?.turno) {
+      try {
+        await api.patch(`/api/alunos/${aluno.id}/checkin-info`, {
+          semestre: payload.semestre || null,
+          turno:    payload.turno    || null,
+        });
+      } catch {
+        // Não bloqueia o check-in se o PATCH falhar
+      }
+    }
+
     let fotoCheckin;
     if (payload?.photoBlob && payload?.photoLinked !== false) {
       fotoCheckin = await blobToBase64(payload.photoBlob);
